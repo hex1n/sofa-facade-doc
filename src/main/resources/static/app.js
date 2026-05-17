@@ -357,12 +357,12 @@ async function selectMethod(methodId, branch = state.branch, highlightTerm = "")
 
 function renderPublishOptions(records, runtime = {}) {
   const select = $("publishSelect");
-  const options = [`<option value="">分支默认配置</option>`].concat(records.map((r, index) => {
+  const options = [`<option value="">分支默认配置（不叠加源码发布记录）</option>`].concat(records.map((r, index) => {
     const parts = [r.source || "publish", r.binding || "binding", r.uniqueId ? `uniqueId=${r.uniqueId}` : "", r.version ? `version=${r.version}` : ""].filter(Boolean);
-    return `<option value="${index}">${escapeHtml(parts.join(" / "))}</option>`;
+    return `<option value="${index}">${escapeHtml("源码发布记录 / " + parts.join(" / "))}</option>`;
   }));
   select.innerHTML = options.join("");
-  state.publishIndex = records.length ? "0" : "";
+  state.publishIndex = "";
   select.value = state.publishIndex;
   renderTargetBox(records, runtime);
 }

@@ -205,7 +205,13 @@ function apiData(path) {
       service: {
         fqn: "com.company.loan.facade.LoanQueryFacade",
         status: branch === "main" ? "published" : "candidate",
-        publishRecords: []
+        publishRecords: [{
+          source: "annotation",
+          binding: "bolt",
+          uniqueId: "xml-test",
+          version: "",
+          incomplete: false
+        }]
       },
       runtime: {
         directUrl: branch === "main" ? "bolt://main:12200" : "bolt://feature:12201",
@@ -296,6 +302,11 @@ assert.equal(context.__app.state.branch, "feature/apply-flow");
 assert.equal(documentMock.getElementById("methodTitle").textContent, "queryStatus");
 assert.match(documentMock.getElementById("methodBreadcrumb").textContent, /loan \/ feature\/apply-flow/);
 assert.match(documentMock.getElementById("targetBox").textContent, /bolt:\/\/feature:12201/);
+assert.equal(documentMock.getElementById("publishSelect").value, "");
+assert.doesNotMatch(documentMock.getElementById("targetBox").textContent, /uniqueId=xml-test/);
+documentMock.getElementById("publishSelect").value = "0";
+documentMock.getElementById("publishSelect").onchange();
+assert.match(documentMock.getElementById("targetBox").textContent, /uniqueId=xml-test/);
 assert.match(context.history.lastUrl, /branch=feature%2Fapply-flow/);
 assert.match(context.history.lastUrl, /method=queryStatus-c0927e9de749/);
 
