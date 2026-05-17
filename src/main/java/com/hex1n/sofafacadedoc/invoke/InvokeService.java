@@ -55,6 +55,14 @@ public class InvokeService {
                 r.validationWarnings = validation.warnings;
                 return r;
             }
+            ProbeResult probe = probe(branchCfg.directUrl);
+            if (!probe.reachable) {
+                r.ok = false;
+                r.status = "unreachable";
+                r.error = "目标服务不可连接：" + (probe.error == null || probe.error.trim().isEmpty() ? "unknown error" : probe.error);
+                r.validationWarnings = validation.warnings;
+                return r;
+            }
             Object argsObject = body == null ? null : body.get("args");
             Object[] args = genericArgs(method, argsObject);
             Object response = client.invoke(serviceName, method, branchCfg, args);
@@ -66,8 +74,9 @@ public class InvokeService {
             r.ok = false;
             r.status = "failed";
             r.error = e.getMessage();
+        } finally {
+            r.elapsedMs = Duration.between(start, Instant.now()).toMillis();
         }
-        r.elapsedMs = Duration.between(start, Instant.now()).toMillis();
         return r;
     }
 

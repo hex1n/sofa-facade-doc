@@ -46,6 +46,32 @@ function setProbeResult(message, error = false) {
   $("probeResult").classList.toggle("error-text", error);
 }
 
+function renderInvokeResult(result) {
+  if (!result || typeof result !== "object") return JSON.stringify(result, null, 2);
+  if (result.status === "unreachable") {
+    return [
+      "调用未发起：目标服务不可连接",
+      `目标：${result.targetDirectUrl || "-"}`,
+      result.targetUniqueId ? `uniqueId：${result.targetUniqueId}` : "",
+      result.error ? `原因：${result.error}` : "",
+      "",
+      JSON.stringify(result, null, 2)
+    ].filter(line => line !== "").join("\n");
+  }
+  if (result.status === "validation_failed") {
+    const errors = (result.validationErrors || []).join("；");
+    const warnings = (result.validationWarnings || []).join("；");
+    return [
+      "调用未发起：请求参数未通过结构校验",
+      errors ? `错误：${errors}` : "",
+      warnings ? `警告：${warnings}` : "",
+      "",
+      JSON.stringify(result, null, 2)
+    ].filter(line => line !== "").join("\n");
+  }
+  return JSON.stringify(result, null, 2);
+}
+
 function showApp() {
   $("login").classList.add("hidden");
   $("app").classList.remove("hidden");
@@ -1066,7 +1092,8 @@ $("invokeBtn").onclick = async () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
     });
-    $("responseBox").textContent = JSON.stringify(r, null, 2);
+    $("responseBox").textContent = renderInvokeResult(r);
+    if (r.status === "unreachable") setProbeResult(r.error || "目标服务不可连接", true);
   } catch (e) {
     $("responseBox").textContent = errorMessage(e);
   }

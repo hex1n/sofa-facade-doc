@@ -171,18 +171,11 @@ public class DocumentQueryService {
 
     private DocumentModel.PublishRecord selectedPublishRecord(DocumentModel.ServiceDoc service, Integer publishIndex) {
         if (service.publishRecords == null || service.publishRecords.isEmpty()) return null;
-        if (publishIndex != null) {
-            if (publishIndex < 0 || publishIndex >= service.publishRecords.size()) {
-                throw new IllegalArgumentException("publish index out of range: " + publishIndex);
-            }
-            return service.publishRecords.get(publishIndex);
+        if (publishIndex == null) return null;
+        if (publishIndex < 0 || publishIndex >= service.publishRecords.size()) {
+            throw new IllegalArgumentException("publish index out of range: " + publishIndex);
         }
-        for (DocumentModel.PublishRecord record : service.publishRecords) {
-            if (!record.incomplete && (!notBlank(record.binding) || "bolt".equalsIgnoreCase(record.binding))) {
-                return record;
-            }
-        }
-        return service.publishRecords.get(0);
+        return service.publishRecords.get(publishIndex);
     }
 
     private AppConfig.EffectiveBranch copyRuntime(AppConfig.EffectiveBranch base) {

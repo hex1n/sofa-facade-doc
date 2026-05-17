@@ -23,7 +23,7 @@ import static org.mockito.Mockito.*;
 
 class DocumentQueryServiceTest {
     @Test
-    void invokeUsesSelectedPublishedRuntimeRecord() throws Exception {
+    void invokeUsesBranchRuntimeWhenNoPublishRecordIsSelected() throws Exception {
         AppConfigLoader loader = mock(AppConfigLoader.class);
         StoreService store = mock(StoreService.class);
         InvokeService invoke = mock(InvokeService.class);
@@ -43,6 +43,37 @@ class DocumentQueryServiceTest {
         when(invoke.invoke(eq(service.fqn), same(method), any(AppConfig.EffectiveBranch.class), same(body))).thenReturn(expected);
 
         InvokeService.InvokeResult result = query.invoke("loan", "feature/apply-flow", method.id, null, body);
+
+        assertSame(expected, result);
+        ArgumentCaptor<AppConfig.EffectiveBranch> runtime = ArgumentCaptor.forClass(AppConfig.EffectiveBranch.class);
+        verify(invoke).invoke(eq(service.fqn), same(method), runtime.capture(), same(body));
+        assertEquals("bolt://127.0.0.1:12201", runtime.getValue().directUrl);
+        assertEquals("default-id", runtime.getValue().uniqueId);
+        assertEquals("default-v", runtime.getValue().version);
+        assertEquals("apply-flow-app", runtime.getValue().targetAppName);
+    }
+
+    @Test
+    void invokeUsesExplicitPublishedRuntimeRecord() throws Exception {
+        AppConfigLoader loader = mock(AppConfigLoader.class);
+        StoreService store = mock(StoreService.class);
+        InvokeService invoke = mock(InvokeService.class);
+        DocumentQueryService query = new DocumentQueryService(loader, store, mock(MarkdownRenderer.class), mock(DiffService.class), new BranchDiffAnnotator(), invoke);
+        AppConfig cfg = config();
+        DocumentModel.MethodDoc method = method("submitApply-1", "submitApply");
+        DocumentModel.ServiceDoc service = service("com.company.loan.facade.LoanApplyFacade", method);
+        service.publishRecords.add(publish("dubbo", "ignored", "ignored-v"));
+        service.publishRecords.add(publish("bolt", "xml-test", "feature-v1"));
+        StoreService.Snapshot snap = snapshot("loan", "feature/apply-flow", document(service));
+        InvokeService.InvokeResult expected = new InvokeService.InvokeResult();
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("args", Collections.emptyMap());
+
+        when(loader.current()).thenReturn(cfg);
+        when(store.latestSnapshot("loan", "feature/apply-flow")).thenReturn(snap);
+        when(invoke.invoke(eq(service.fqn), same(method), any(AppConfig.EffectiveBranch.class), same(body))).thenReturn(expected);
+
+        InvokeService.InvokeResult result = query.invoke("loan", "feature/apply-flow", method.id, 1, body);
 
         assertSame(expected, result);
         ArgumentCaptor<AppConfig.EffectiveBranch> runtime = ArgumentCaptor.forClass(AppConfig.EffectiveBranch.class);

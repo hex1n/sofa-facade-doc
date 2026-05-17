@@ -156,6 +156,26 @@ class InvokeServiceTest {
         assertEquals(Arrays.asList("A", "B"), arrayOut.get("items"));
     }
 
+    @Test
+    void returnsUnreachableBeforeCallingSofaRpcWhenDirectUrlCannotConnect() {
+        FakeClient client = new FakeClient(false);
+        InvokeService service = new InvokeService(new GenericArgumentConverter(), new InvocationValidator(new GenericArgumentConverter()), new GenericResponseNormalizer(), client);
+        DocumentModel.MethodDoc method = method(param("request", requestTree("request")));
+        Map<String, Object> request = new LinkedHashMap<>();
+        request.put("orderNo", "A001");
+        request.put("amount", "12.34");
+        request.put("status", "NEW");
+        com.hex1n.sofafacadedoc.config.AppConfig.EffectiveBranch branch = new com.hex1n.sofafacadedoc.config.AppConfig.EffectiveBranch();
+        branch.directUrl = "bolt://127.0.0.1:12200";
+
+        InvokeService.InvokeResult result = service.invoke("com.company.loan.facade.LoanApplyFacade", method, branch, Collections.singletonMap("args", request));
+
+        assertFalse(result.ok);
+        assertEquals("unreachable", result.status);
+        assertTrue(result.error.contains("目标服务不可连接"), result.error);
+        assertFalse(client.invoked);
+    }
+
     private DocumentModel.MethodDoc method(DocumentModel.ParamDoc... params) {
         DocumentModel.MethodDoc method = new DocumentModel.MethodDoc();
         method.name = "submit";
@@ -196,5 +216,29 @@ class InvokeServiceTest {
     private String leaf(String path) {
         int i = path.lastIndexOf('.');
         return i >= 0 ? path.substring(i + 1) : path;
+    }
+
+    private static class FakeClient extends SofaRpcGenericClient {
+        private final boolean reachable;
+        private boolean invoked;
+
+        FakeClient(boolean reachable) {
+            this.reachable = reachable;
+        }
+
+        @Override
+        public InvokeService.ProbeResult probe(String directUrl) {
+            InvokeService.ProbeResult result = new InvokeService.ProbeResult();
+            result.target = directUrl;
+            result.reachable = reachable;
+            if (!reachable) result.error = "Connection refused";
+            return result;
+        }
+
+        @Override
+        public Object invoke(String serviceName, DocumentModel.MethodDoc method, com.hex1n.sofafacadedoc.config.AppConfig.EffectiveBranch branchCfg, Object[] args) {
+            invoked = true;
+            return Collections.emptyMap();
+        }
     }
 }

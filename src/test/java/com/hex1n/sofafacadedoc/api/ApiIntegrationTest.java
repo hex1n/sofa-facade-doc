@@ -462,11 +462,16 @@ class ApiIntegrationTest {
         JsonNode invalidInvoke = postJson("/api/projects/loan/methods/submitApply-294ff142d795/invoke?branch=" + enc("feature/apply-flow"), invalidArgs);
         assertEquals("validation_failed", invalidInvoke.get("status").asText());
         assertEquals("bolt://127.0.0.1:12201", invalidInvoke.get("targetDirectUrl").asText());
-        assertEquals("test", invalidInvoke.get("targetUniqueId").asText());
+        assertTrue(invalidInvoke.get("targetUniqueId").isNull());
         assertEquals("feature-v1", invalidInvoke.get("targetVersion").asText());
         assertEquals("apply-flow-app", invalidInvoke.get("targetAppName").asText());
         assertEquals(1, invalidInvoke.get("validationErrors").size());
         assertTrue(invalidInvoke.get("validationWarnings").toString().contains("request.orderNo is required"));
+
+        JsonNode invalidInvokeWithPublish = postJson("/api/projects/loan/methods/submitApply-294ff142d795/invoke?branch=" + enc("feature/apply-flow") + "&publish=0", invalidArgs);
+        assertEquals("validation_failed", invalidInvokeWithPublish.get("status").asText());
+        assertEquals("test", invalidInvokeWithPublish.get("targetUniqueId").asText());
+        assertEquals("feature-v1", invalidInvokeWithPublish.get("targetVersion").asText());
 
         JsonNode probe = getJson("/api/projects/loan/methods/submitApply-294ff142d795/probe?branch=" + enc("feature/apply-flow"));
         assertFalse(probe.get("reachable").asBoolean());
