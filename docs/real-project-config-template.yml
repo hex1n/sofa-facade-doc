@@ -1,0 +1,61 @@
+server:
+  listen: "0.0.0.0:8080"
+  dataDir: "/data/sofa-facade-doc"
+
+auth:
+  adminTokens:
+    - "replace-with-admin-token"
+
+teams:
+  project-team:
+    displayName: "真实业务团队"
+    tokens:
+      - "replace-with-team-token"
+
+git:
+  # Pick one Git credential mode.
+  sshKeyPath: "/run/secrets/git_deploy_key"
+  # tokenEnv: "SOFA_DOC_GIT_TOKEN"
+
+projects:
+  real-project:
+    team: "project-team"
+    displayName: "真实业务项目"
+    repo: "git@git.company.com:team/real-project.git"
+    baselineBranch: "develop"
+    tokens:
+      - "replace-with-project-token"
+
+    branchDefaults:
+      directUrl: "bolt://10.0.0.10:12200"
+      uniqueId: ""
+      version: ""
+      targetAppName: ""
+      springProfiles:
+        - "test"
+
+    branches:
+      include:
+        - "develop"
+        - "test"
+        - "feature/*"
+      exclude:
+        - "feature/wip-*"
+      maxMatched: 20
+
+    sourceRoots:
+      - "facade/src/main/java"
+      - "service/src/main/java"
+    resourceRoots:
+      - "service/src/main/resources"
+    facadePackages:
+      - "com.company.project.facade"
+
+    branchOverrides:
+      "feature/*":
+        directUrl: "bolt://10.0.0.11:12200"
+        targetAppName: "project-feature-test"
+      test:
+        directUrl: "bolt://10.0.0.12:12200"
+        springProfiles:
+          - "test"

@@ -1,0 +1,1179 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SOFABoot Facade · 设计稿</title>
+<style>
+  :root {
+    --cream-bg: #f5f4ed;
+    --cream-soft: #efece1;
+    --surface: #fbfaf5;
+    --surface-pure: #ffffff;
+    --border: #e6e2d3;
+    --border-strong: #d3cebc;
+    --ink: #1f1e1d;
+    --ink-soft: #2c2b2a;
+    --muted: #6b6a65;
+    --muted-strong: #4a4945;
+    --accent: #c96442;
+    --accent-hover: #b1543a;
+    --accent-soft: #fbede4;
+    --accent-ring: rgba(201, 100, 66, .18);
+    --green: #4a6b3a;
+    --green-soft: #ebf0dc;
+    --amber: #8a5a1f;
+    --amber-soft: #fbeed5;
+    --red: #8b2e1f;
+    --red-soft: #f8e0d8;
+    --code-bg: #2c2b2a;
+    --code-fg: #ece8d8;
+    --shadow-sm: 0 1px 2px rgba(31, 30, 29, .04);
+    --shadow-md: 0 4px 14px rgba(31, 30, 29, .06);
+    --shadow-lg: 0 18px 38px rgba(31, 30, 29, .09);
+    --radius-sm: 8px;
+    --radius: 12px;
+    --radius-lg: 16px;
+    --serif: 'Tiempos Headline', 'Charter', 'Iowan Old Style', 'Georgia', serif;
+    --sans: 'Inter', 'Styrene B', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: var(--sans);
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--cream-bg);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button {
+    min-height: 34px;
+    border: 1px solid var(--border);
+    background: var(--surface-pure);
+    border-radius: var(--radius-sm);
+    padding: 7px 13px;
+    cursor: pointer;
+    color: var(--ink-soft);
+    transition: background .14s ease, border-color .14s ease, color .14s ease, box-shadow .14s ease;
+  }
+  button:hover { background: var(--cream-soft); border-color: var(--border-strong); }
+  button.primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    box-shadow: 0 1px 0 rgba(0,0,0,.04), 0 6px 14px rgba(201,100,66,.22);
+  }
+  button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+  button.ghost { background: transparent; border-color: transparent; color: var(--muted-strong); }
+  button.ghost:hover { background: var(--cream-soft); }
+  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: 2px solid var(--accent-ring);
+    outline-offset: 2px;
+  }
+
+  input, select, textarea {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 9px 11px;
+    background: var(--surface-pure);
+    transition: border-color .14s ease, box-shadow .14s ease;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-ring);
+  }
+
+  .app {
+    height: 100vh;
+    display: grid;
+    grid-template-columns: 304px minmax(0, 1fr) 408px;
+    gap: 10px;
+    padding: 10px;
+    background: var(--cream-bg);
+  }
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar { padding: 16px; gap: 14px; overflow: auto; }
+  .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 2px; }
+  .brand-mark {
+    width: 32px; height: 32px;
+    display: grid; place-items: center;
+    border-radius: 9px;
+    background: var(--ink);
+    color: var(--cream-bg);
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 17px;
+    letter-spacing: -.5px;
+  }
+  .brand-text { line-height: 1.25; }
+  .brand-text strong {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 16px;
+    letter-spacing: -.2px;
+    color: var(--ink);
+  }
+  .brand-text small { display: block; color: var(--muted); font-size: 11.5px; margin-top: 1px; }
+
+  .config-entry {
+    width: 100%;
+    text-align: left;
+    background: var(--surface-pure);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 8px;
+    color: var(--ink-soft);
+  }
+  .config-entry:hover { background: var(--cream-soft); }
+  .config-entry .pill {
+    font-size: 10.5px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent-hover);
+    font-weight: 600;
+  }
+
+  .search-wrap { position: relative; }
+  .search-wrap input {
+    width: 100%;
+    padding: 10px 56px 10px 36px;
+    border-radius: 10px;
+  }
+  .search-wrap .search-icon {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    color: var(--muted); pointer-events: none;
+  }
+  .search-wrap kbd {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    font-family: var(--sans);
+    font-size: 11px;
+    padding: 2px 6px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    background: var(--cream-soft);
+    color: var(--muted);
+  }
+
+  .nav-section { display: flex; flex-direction: column; gap: 8px; }
+  .nav-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 2px;
+  }
+  .nav-head h3 {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .nav-head .count {
+    min-width: 22px;
+    text-align: center;
+    padding: 1px 7px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface-pure);
+    color: var(--muted);
+    font-size: 11px;
+  }
+  select.field {
+    width: 100%;
+    padding: 9px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--surface-pure) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2.5 4.5l3.5 3.5 3.5-3.5' fill='none' stroke='%236b6a65' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/></svg>") no-repeat right 12px center;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .scan-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .scan-actions button { font-size: 12.5px; padding: 7px 10px; }
+
+  .scan-summary {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface-pure);
+    overflow: hidden;
+  }
+  .scan-summary-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 11px;
+    border-bottom: 1px solid var(--border);
+    background: var(--cream-soft);
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--muted-strong);
+  }
+  .scan-summary-head .totals { display: flex; gap: 6px; font-weight: 600; color: var(--muted); }
+  .scan-row {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) auto;
+    gap: 4px 8px;
+    padding: 9px 11px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .scan-row:last-child { border-bottom: 0; }
+  .scan-branch { color: var(--muted-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .scan-message { grid-column: 1 / -1; color: var(--muted); overflow-wrap: anywhere; }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    border-radius: 6px;
+    padding: 2px 7px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--cream-soft);
+    color: var(--muted-strong);
+    border: 1px solid var(--border);
+  }
+  .badge.success, .badge.published, .badge.unchanged { background: var(--green-soft); color: var(--green); border-color: #d6e0bf; }
+  .badge.candidate, .badge.skipped { background: var(--amber-soft); color: var(--amber); border-color: #ecd9a8; }
+  .badge.failed, .badge.source_missing, .badge.incomplete { background: var(--red-soft); color: var(--red); border-color: #ecbeb1; }
+  .badge.accent { background: var(--accent-soft); color: var(--accent-hover); border-color: #ecd2c1; }
+  .badge.dot::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  .service-list { display: flex; flex-direction: column; gap: 8px; }
+  .service-item {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px;
+    background: var(--surface-pure);
+    transition: border-color .14s ease, box-shadow .14s ease;
+  }
+  .service-item:hover { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
+  .service-header {
+    display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px;
+    align-items: start;
+    margin-bottom: 8px;
+  }
+  .service-name {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: var(--muted-strong);
+    overflow-wrap: anywhere;
+  }
+  .method-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 8px;
+    padding: 7px 9px;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--ink-soft);
+    border: 1px solid transparent;
+    margin-top: 4px;
+  }
+  .method-row:hover { background: var(--cream-soft); }
+  .method-row.active {
+    background: var(--accent-soft);
+    border-color: #f0c6ad;
+    color: var(--accent-hover);
+    font-weight: 600;
+  }
+  .method-row .chev { color: var(--muted); }
+  .method-row.active .chev { color: var(--accent); }
+
+  /* ---------- Content ---------- */
+  .content { overflow: hidden; }
+  .content-scroll {
+    flex: 1;
+    overflow: auto;
+    display: grid;
+    grid-template-rows: auto auto 1fr;
+  }
+  .toolbar {
+    position: sticky; top: 0; z-index: 3;
+    background: var(--surface);
+    padding: 18px 26px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; gap: 18px;
+    flex-wrap: wrap;
+  }
+  .toolbar > div:first-child { min-width: 0; flex: 1 1 360px; }
+  .breadcrumb {
+    color: var(--muted);
+    font-size: 12px;
+    display: flex; align-items: center; gap: 6px;
+    margin-bottom: 6px;
+  }
+  .breadcrumb span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .breadcrumb .sep { color: var(--border-strong); }
+  .method-title {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 26px;
+    line-height: 1.2;
+    letter-spacing: -.4px;
+    color: var(--ink);
+    overflow-wrap: anywhere;
+  }
+  .meta-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .toolbar-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: flex-start; }
+  .toolbar-actions button { background: var(--surface-pure); }
+
+  .tabs {
+    position: sticky; top: 0; z-index: 2;
+    display: flex; gap: 4px;
+    padding: 10px 26px 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .tabs button {
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--muted);
+    padding: 9px 14px 11px;
+    border-radius: 0;
+    min-height: 0;
+  }
+  .tabs button:hover { color: var(--ink); background: transparent; }
+  .tabs button.active { color: var(--accent); border-color: var(--accent); }
+
+  .pane { padding: 26px; }
+  .pane.hidden { display: none; }
+
+  /* Markdown */
+  .markdown { max-width: 880px; font-size: 14.5px; line-height: 1.75; color: var(--ink-soft); }
+  .markdown h1 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 24px;
+    margin: 0 0 18px;
+    letter-spacing: -.3px;
+    color: var(--ink);
+  }
+  .markdown h2 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 19px;
+    margin: 32px 0 12px;
+    color: var(--ink);
+  }
+  .markdown h3 {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--muted-strong);
+    margin: 22px 0 10px;
+  }
+  .markdown p { margin: 0 0 14px; }
+  .markdown ul { padding-left: 22px; margin: 0 0 14px; }
+  .markdown li { margin-bottom: 4px; }
+  .markdown code {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    background: var(--cream-soft);
+    border: 1px solid var(--border);
+    padding: 1px 6px;
+    border-radius: 5px;
+    color: var(--ink-soft);
+  }
+  .markdown table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 13px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 12px 0 18px;
+  }
+  .markdown th, .markdown td {
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 12px;
+    vertical-align: top;
+  }
+  .markdown th {
+    background: var(--cream-soft);
+    color: var(--muted-strong);
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  .markdown tr:last-child td { border-bottom: 0; }
+  .markdown th:last-child, .markdown td:last-child { border-right: 0; }
+
+  pre.code-block {
+    background: var(--code-bg);
+    color: var(--code-fg);
+    border-radius: 10px;
+    padding: 14px 16px;
+    overflow: auto;
+    line-height: 1.55;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    margin: 0;
+  }
+
+  /* Field tree */
+  .field-group { margin-bottom: 24px; max-width: 880px; }
+  .field-group-head {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+  }
+  .field-group-head h3 {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--muted);
+  }
+  details.field-node {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface-pure);
+    margin: 8px 0;
+    overflow: hidden;
+  }
+  details.field-node > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 10px 14px;
+    display: grid;
+    grid-template-columns: 14px minmax(140px, 1fr) minmax(160px, 1.2fr) auto auto;
+    gap: 10px;
+    align-items: center;
+    background: var(--surface-pure);
+  }
+  details.field-node > summary::-webkit-details-marker { display: none; }
+  details.field-node > summary::before {
+    content: "▸";
+    color: var(--muted);
+    font-size: 10px;
+    transition: transform .14s ease;
+  }
+  details.field-node[open] > summary::before { transform: rotate(90deg); }
+  details.field-node.leaf > summary::before { content: "·"; color: var(--border-strong); }
+  .field-name { font-weight: 600; min-width: 0; overflow-wrap: anywhere; color: var(--ink-soft); }
+  .field-type {
+    font-family: var(--mono); font-size: 12px;
+    color: var(--muted);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .field-chip {
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 1px 6px;
+    color: var(--muted);
+    font-size: 11px;
+    background: var(--cream-soft);
+    white-space: nowrap;
+  }
+  .field-chip.required { background: var(--accent-soft); color: var(--accent-hover); border-color: #ecd2c1; }
+  .field-comment {
+    color: var(--muted);
+    padding: 0 14px 12px 38px;
+    font-size: 12.5px;
+    overflow-wrap: anywhere;
+  }
+  .field-meta { margin-top: 6px; font-size: 11.5px; color: var(--muted-strong); }
+  .field-children { padding: 0 14px 12px 24px; }
+
+  /* JSON viewer */
+  .json-viewer {
+    background: var(--code-bg);
+    color: var(--code-fg);
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.55;
+    max-width: 1000px;
+  }
+  .json-gutter {
+    user-select: none;
+    color: #6f6c63;
+    text-align: right;
+    padding: 14px 10px;
+    border-right: 1px solid rgba(255,255,255,.06);
+    background: rgba(0,0,0,.18);
+  }
+  .json-gutter .ln { display: block; cursor: pointer; }
+  .json-gutter .ln.fold::before { content: "▾"; margin-right: 3px; color: #a39d8d; }
+  .json-gutter .ln.folded::before { content: "▸"; margin-right: 3px; color: var(--accent); }
+  .json-body { padding: 14px 16px; overflow: auto; }
+  .json-body code { font-family: inherit; background: transparent; padding: 0; border: 0; color: inherit; }
+  .json-line { white-space: pre; min-height: 1.55em; }
+  .json-line.hidden-fold { display: none; }
+  .j-key { color: #e3b341; }
+  .j-str { color: #a5d6a7; }
+  .j-num { color: #b9a4ff; }
+  .j-lit { color: #ffab91; }
+  .j-punct { color: #8a877d; }
+  .fold-summary { color: var(--accent); cursor: pointer; }
+
+  /* Diff */
+  .diff-list { display: flex; flex-direction: column; gap: 10px; max-width: 880px; }
+  .change {
+    border: 1px solid var(--border);
+    border-left-width: 4px;
+    border-radius: 10px;
+    padding: 12px 14px;
+    background: var(--surface-pure);
+  }
+  .change.Breaking { border-left-color: var(--red); }
+  .change.Non-breaking { border-left-color: var(--green); }
+  .change.Info { border-left-color: var(--accent); }
+  .change-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .change-head b { font-size: 12px; font-weight: 700; }
+  .change-path { font-family: var(--mono); font-size: 12px; color: var(--muted-strong); }
+  .change-msg { color: var(--muted-strong); font-size: 13px; }
+
+  /* Invoke */
+  .invoke { overflow: hidden; }
+  .invoke-scroll { overflow: auto; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+  .invoke-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  }
+  .invoke-head h2 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 17px;
+    margin: 0;
+    letter-spacing: -.2px;
+  }
+  .invoke-head small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+
+  .label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .label .hint { font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--muted); }
+
+  .target {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 12px;
+    background: var(--surface-pure);
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--muted-strong);
+    overflow-wrap: anywhere;
+  }
+  .target b { color: var(--ink); font-weight: 600; }
+
+  .args-editor {
+    background: var(--code-bg);
+    color: var(--code-fg);
+    border: 1px solid #1a1918;
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 38px 1fr;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.55;
+    min-height: 220px;
+  }
+  .args-editor .json-gutter { padding: 10px 8px; font-size: 11.5px; }
+  .args-editor .json-body { padding: 10px 12px; }
+  .args-editor .json-body[contenteditable="true"] { outline: none; }
+
+  .invoke-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .invoke-actions button { padding: 8px 10px; font-size: 12.5px; }
+
+  .response {
+    background: var(--code-bg);
+    color: var(--code-fg);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.55;
+    min-height: 110px;
+    overflow: auto;
+    white-space: pre-wrap;
+    margin: 0;
+  }
+
+  .case-list { display: flex; flex-direction: column; gap: 6px; }
+  .case {
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 10px 12px;
+    background: var(--surface-pure);
+    cursor: pointer;
+    transition: border-color .14s ease, background .14s ease;
+  }
+  .case:hover { border-color: var(--border-strong); background: var(--cream-soft); }
+  .case-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .case-name { font-weight: 600; font-size: 13px; }
+  .case-meta { color: var(--muted); font-size: 11.5px; margin-top: 3px; }
+
+  /* helpers */
+  .muted { color: var(--muted); }
+  .stack { display: flex; flex-direction: column; gap: 12px; }
+  .row { display: flex; align-items: center; gap: 8px; }
+  .grow { flex: 1 1 auto; min-width: 0; }
+  .divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+  /* preview banner */
+  .preview-banner {
+    position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
+    background: var(--ink); color: var(--cream-bg);
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    box-shadow: var(--shadow-lg);
+    z-index: 50;
+    display: flex; gap: 10px; align-items: center;
+  }
+  .preview-banner .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+  .preview-banner a { color: var(--accent-soft); text-decoration: none; border-bottom: 1px dashed currentColor; }
+</style>
+</head>
+<body>
+<main class="app">
+  <!-- Sidebar -->
+  <aside class="panel sidebar">
+    <div class="brand">
+      <div class="brand-mark">S</div>
+      <div class="brand-text">
+        <strong>SOFABoot Facade</strong>
+        <small>接口文档 · 测试调用</small>
+      </div>
+    </div>
+
+    <button class="config-entry">
+      <span>项目与分支配置</span>
+      <span class="pill">admin</span>
+    </button>
+
+    <div class="search-wrap">
+      <svg class="search-icon" width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.4"/>
+        <path d="M9.5 9.5l3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+      <input placeholder="搜索服务 / 方法 / 字段 / 注释">
+      <kbd>↵</kbd>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-head"><h3>项目</h3></div>
+      <select class="field">
+        <option>loan · 贷款核心域</option>
+        <option>risk · 风控域</option>
+      </select>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-head"><h3>分支</h3></div>
+      <select class="field">
+        <option>develop</option>
+        <option>feature/refund-2026q2</option>
+        <option>main</option>
+      </select>
+      <div class="scan-actions">
+        <button>刷新当前分支</button>
+        <button>刷新全部分支</button>
+      </div>
+      <div class="scan-summary">
+        <div class="scan-summary-head">
+          <span>当前分支</span>
+          <span class="totals">
+            <span class="badge success">成功 1</span>
+            <span class="badge skipped">跳过 2</span>
+          </span>
+        </div>
+        <div class="scan-row">
+          <span class="scan-branch">develop</span>
+          <span class="badge success">成功</span>
+          <span class="scan-message">扫描 12 个 facade，3 个 publish 候选。</span>
+        </div>
+        <div class="scan-row">
+          <span class="scan-branch">feature/refund-2026q2</span>
+          <span class="badge skipped">跳过</span>
+          <span class="scan-message">commit 未变化，复用上次快照。</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-head">
+        <h3>服务</h3>
+        <span class="count">3</span>
+      </div>
+      <div class="service-list">
+        <div class="service-item">
+          <div class="service-header">
+            <div class="service-name">com.company.loan.facade.LoanQueryFacade</div>
+            <span class="badge published">已发布</span>
+          </div>
+          <div class="method-row active">
+            <span>queryLoanDetail</span>
+            <span class="chev">›</span>
+          </div>
+          <div class="method-row">
+            <span>queryRepayments</span>
+            <span class="chev">›</span>
+          </div>
+          <div class="method-row">
+            <span>queryHistory</span>
+            <span class="chev">›</span>
+          </div>
+        </div>
+
+        <div class="service-item">
+          <div class="service-header">
+            <div class="service-name">com.company.loan.facade.LoanApplyFacade</div>
+            <span class="badge candidate">候选</span>
+          </div>
+          <div class="method-row">
+            <span>submitApplication</span>
+            <span class="chev">›</span>
+          </div>
+          <div class="method-row">
+            <span>cancelApplication</span>
+            <span class="chev">›</span>
+          </div>
+        </div>
+
+        <div class="service-item">
+          <div class="service-header">
+            <div class="service-name">com.company.loan.facade.RepayFacade</div>
+            <span class="badge incomplete">配置不完整</span>
+          </div>
+          <div class="method-row">
+            <span>triggerRepay</span>
+            <span class="chev">›</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Content -->
+  <section class="panel content">
+    <div class="content-scroll">
+      <header class="toolbar">
+        <div>
+          <div class="breadcrumb">
+            <span>loan</span><span class="sep">/</span>
+            <span>develop</span><span class="sep">/</span>
+            <span>LoanQueryFacade</span>
+          </div>
+          <div class="method-title">queryLoanDetail</div>
+          <div class="meta-chips">
+            <span class="badge published">已发布</span>
+            <span class="badge">commit a3f9c8d2</span>
+            <span class="badge">1 个入参</span>
+            <span class="badge accent">LoanDetailDTO</span>
+          </div>
+        </div>
+        <div class="toolbar-actions">
+          <button>复制 Markdown</button>
+          <button>下载 Markdown</button>
+          <button>复制链接</button>
+        </div>
+      </header>
+
+      <nav class="tabs">
+        <button class="active" data-tab="doc">文档</button>
+        <button data-tab="tree">字段树</button>
+        <button data-tab="json">JSON 示例</button>
+        <button data-tab="diff">Diff</button>
+      </nav>
+
+      <article class="pane" id="pane-doc">
+        <div class="markdown">
+          <h1>queryLoanDetail</h1>
+          <p>按贷款编号查询贷款主信息、还款计划和最近一次还款记录。仅供线上业务侧只读使用，禁止依赖该接口做幂等控制。</p>
+
+          <h3>调用约束</h3>
+          <ul>
+            <li><code>loanNo</code> 必填，长度 18 位的全局贷款号。</li>
+            <li>响应里的 <code>repayPlans</code> 在 <code>SETTLED</code> 状态下可能为空数组。</li>
+            <li>同一 traceId 下 30 秒内重复请求会走 cache，不计入限流。</li>
+          </ul>
+
+          <h2>入参</h2>
+          <table>
+            <thead><tr><th>字段</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td><code>loanNo</code></td><td><code>String</code></td><td>是</td><td>贷款编号，18 位</td></tr>
+              <tr><td><code>operator</code></td><td><code>String</code></td><td>否</td><td>操作人工号，审计用</td></tr>
+            </tbody>
+          </table>
+
+          <h2>出参 LoanDetailDTO</h2>
+          <table>
+            <thead><tr><th>字段</th><th>类型</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td><code>loanNo</code></td><td><code>String</code></td><td>贷款编号</td></tr>
+              <tr><td><code>status</code></td><td><code>LoanStatus</code></td><td>枚举：PENDING/ACTIVE/SETTLED/OVERDUE</td></tr>
+              <tr><td><code>amount</code></td><td><code>BigDecimal</code></td><td>放款金额，分</td></tr>
+              <tr><td><code>repayPlans</code></td><td><code>List&lt;RepayPlanDTO&gt;</code></td><td>还款计划，按期次升序</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="pane hidden" id="pane-tree">
+        <div class="field-group">
+          <div class="field-group-head"><h3>入参 loanNo</h3></div>
+          <details class="field-node leaf" open>
+            <summary>
+              <span></span>
+              <span class="field-name">loanNo</span>
+              <span class="field-type">String</span>
+              <span class="field-chip">string</span>
+              <span class="field-chip required">必填</span>
+            </summary>
+            <div class="field-comment">贷款编号，长度 18 位<div class="field-meta">约束：@Size(min=18, max=18), @Pattern</div></div>
+          </details>
+        </div>
+
+        <div class="field-group">
+          <div class="field-group-head"><h3>出参 LoanDetailDTO</h3></div>
+          <details class="field-node" open>
+            <summary>
+              <span></span>
+              <span class="field-name">return</span>
+              <span class="field-type">com.company.loan.dto.LoanDetailDTO</span>
+              <span class="field-chip">object</span>
+              <span class="field-chip">-</span>
+            </summary>
+            <div class="field-comment">贷款详情聚合对象</div>
+            <div class="field-children">
+              <details class="field-node leaf">
+                <summary>
+                  <span></span>
+                  <span class="field-name">loanNo</span>
+                  <span class="field-type">String</span>
+                  <span class="field-chip">string</span>
+                  <span class="field-chip required">必填</span>
+                </summary>
+                <div class="field-comment">贷款编号</div>
+              </details>
+              <details class="field-node leaf">
+                <summary>
+                  <span></span>
+                  <span class="field-name">status</span>
+                  <span class="field-type">LoanStatus</span>
+                  <span class="field-chip">enum</span>
+                  <span class="field-chip">-</span>
+                </summary>
+                <div class="field-comment">贷款状态</div>
+              </details>
+              <details class="field-node leaf">
+                <summary>
+                  <span></span>
+                  <span class="field-name">amount</span>
+                  <span class="field-type">BigDecimal</span>
+                  <span class="field-chip">number</span>
+                  <span class="field-chip">-</span>
+                </summary>
+                <div class="field-comment">放款金额（分）</div>
+              </details>
+              <details class="field-node" open>
+                <summary>
+                  <span></span>
+                  <span class="field-name">repayPlans</span>
+                  <span class="field-type">List&lt;RepayPlanDTO&gt;</span>
+                  <span class="field-chip">array</span>
+                  <span class="field-chip">-</span>
+                </summary>
+                <div class="field-comment">按期次升序</div>
+                <div class="field-children">
+                  <details class="field-node leaf">
+                    <summary>
+                      <span></span>
+                      <span class="field-name">periodNo</span>
+                      <span class="field-type">Integer</span>
+                      <span class="field-chip">number</span>
+                      <span class="field-chip required">必填</span>
+                    </summary>
+                    <div class="field-comment">期次（从 1 开始）</div>
+                  </details>
+                  <details class="field-node leaf">
+                    <summary>
+                      <span></span>
+                      <span class="field-name">principal</span>
+                      <span class="field-type">BigDecimal</span>
+                      <span class="field-chip">number</span>
+                      <span class="field-chip">-</span>
+                    </summary>
+                    <div class="field-comment">本金（分）</div>
+                  </details>
+                </div>
+              </details>
+            </div>
+          </details>
+        </div>
+      </article>
+
+      <article class="pane hidden" id="pane-json">
+        <div class="json-viewer" data-json-viewer>
+          <div class="json-gutter"></div>
+          <div class="json-body"><code></code></div>
+        </div>
+      </article>
+
+      <article class="pane hidden" id="pane-diff">
+        <div class="diff-list">
+          <div class="change Breaking">
+            <div class="change-head"><b>Breaking</b><span class="badge failed">破坏性</span></div>
+            <div class="change-path">LoanDetailDTO.amount</div>
+            <div class="change-msg">类型由 Long 改为 BigDecimal，旧调用方反序列化将失败。</div>
+          </div>
+          <div class="change Non-breaking">
+            <div class="change-head"><b>Non-breaking</b><span class="badge success">兼容</span></div>
+            <div class="change-path">LoanDetailDTO.repayPlans</div>
+            <div class="change-msg">新增字段 lateFeeRate，未传时默认 0。</div>
+          </div>
+          <div class="change Info">
+            <div class="change-head"><b>Info</b><span class="badge accent">注释</span></div>
+            <div class="change-path">queryLoanDetail</div>
+            <div class="change-msg">JavaDoc 更新：补充缓存命中说明。</div>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- Invoke -->
+  <aside class="panel invoke">
+    <div class="invoke-scroll">
+      <div class="invoke-head">
+        <div>
+          <h2>RPC 调用</h2>
+          <small>bolt + hessian2 · 仅测试环境</small>
+        </div>
+        <span class="badge candidate">测试环境</span>
+      </div>
+
+      <div class="target">
+        <b>bolt://10.20.31.5:12200</b><br>
+        uniqueId=loan-query · version=1.0 · app=loan-service
+      </div>
+
+      <div class="stack">
+        <div class="label">发布记录</div>
+        <select class="field">
+          <option>SofaService / bolt / uniqueId=loan-query / version=1.0</option>
+          <option>分支默认配置</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <button class="grow">连通性检查</button>
+        <span class="badge success dot">可达 18ms</span>
+      </div>
+
+      <div class="stack">
+        <div class="label">
+          请求 JSON
+          <span class="hint">点击行号折叠</span>
+        </div>
+        <div class="args-editor" data-json-viewer data-editable>
+          <div class="json-gutter"></div>
+          <div class="json-body"><code contenteditable="true" spellcheck="false"></code></div>
+        </div>
+      </div>
+
+      <div class="invoke-actions">
+        <button class="primary">调用</button>
+        <button>保存用例</button>
+        <button>更新用例</button>
+      </div>
+
+      <div class="stack">
+        <div class="label">响应</div>
+        <pre class="response">{
+  "loanNo": "LN20260501000000001",
+  "status": "ACTIVE",
+  "amount": 1500000,
+  "repayPlans": [
+    { "periodNo": 1, "principal": 250000 },
+    { "periodNo": 2, "principal": 250000 }
+  ]
+}</pre>
+      </div>
+
+      <div class="stack">
+        <div class="label">共享用例 <span class="hint">3</span></div>
+        <div class="case-list">
+          <div class="case">
+            <div class="case-row">
+              <span class="case-name">正常贷款 · ACTIVE</span>
+              <button class="ghost" style="font-size:11.5px;color:var(--red)">删除</button>
+            </div>
+            <div class="case-meta">@harper · 2026-05-12 14:22</div>
+          </div>
+          <div class="case">
+            <div class="case-row">
+              <span class="case-name">逾期场景 · OVERDUE</span>
+              <button class="ghost" style="font-size:11.5px;color:var(--red)">删除</button>
+            </div>
+            <div class="case-meta">@minou · 2026-05-09 10:01</div>
+          </div>
+          <div class="case">
+            <div class="case-row">
+              <span class="case-name">边界 · 已结清</span>
+              <button class="ghost" style="font-size:11.5px;color:var(--red)">删除</button>
+            </div>
+            <div class="case-meta">@harper · 2026-04-30 09:14</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<div class="preview-banner">
+  <span class="dot"></span>
+  设计稿 · mockup.html
+  <a href="/">回到当前 UI</a>
+</div>
+
+<script>
+  // ---------- Tabs ----------
+  document.querySelectorAll(".tabs button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tabs button").forEach(b => b.classList.toggle("active", b === btn));
+      const tab = btn.dataset.tab;
+      ["doc", "tree", "json", "diff"].forEach(name => {
+        document.getElementById("pane-" + name).classList.toggle("hidden", name !== tab);
+      });
+    });
+  });
+
+  // ---------- Method row selection ----------
+  document.querySelectorAll(".method-row").forEach(row => {
+    row.addEventListener("click", () => {
+      document.querySelectorAll(".method-row").forEach(r => r.classList.remove("active"));
+      row.classList.add("active");
+    });
+  });
+
+  // ---------- JSON highlight + line numbers + simple fold ----------
+  function escapeHtml(s) {
+    return String(s == null ? "" : s).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+  }
+  function highlightJsonLine(line) {
+    return escapeHtml(line)
+      .replace(/(&quot;(?:\\.|[^&quot;\\])*&quot;)(\s*:)/g, '<span class="j-key">$1</span><span class="j-punct">$2</span>')
+      .replace(/(&quot;(?:\\.|[^&quot;\\])*&quot;)(?![^<]*<\/span>)/g, '<span class="j-str">$1</span>')
+      .replace(/\b(true|false|null)\b/g, '<span class="j-lit">$1</span>')
+      .replace(/(?<![\w"])(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)(?![\w"])/g, '<span class="j-num">$1</span>')
+      .replace(/([{}\[\],])/g, '<span class="j-punct">$1</span>');
+  }
+  // crude but readable for mockup: detect opening { or [ at end of line, pair with matching close at column-aligned line
+  function buildFolds(lines) {
+    const stack = [];
+    const folds = {}; // openLine -> closeLine
+    lines.forEach((line, idx) => {
+      const trimmed = line.replace(/[\s,]*$/, "");
+      if (/[\[{]\s*$/.test(trimmed)) stack.push(idx);
+      // count closings on this line
+      const closes = (line.match(/^[\s]*[\]}]/g) || []).length;
+      for (let k = 0; k < closes; k++) {
+        const open = stack.pop();
+        if (open != null && idx > open + 1) folds[open] = idx;
+      }
+    });
+    return folds;
+  }
+  function renderJsonViewer(root, jsonText) {
+    const gutter = root.querySelector(".json-gutter");
+    const body = root.querySelector(".json-body code");
+    const lines = jsonText.split("\n");
+    const folds = buildFolds(lines);
+    const state = {}; // lineIndex -> folded boolean
+    function paint() {
+      gutter.innerHTML = lines.map((_, i) => {
+        const isFold = folds[i] != null;
+        const cls = isFold ? (state[i] ? "ln folded" : "ln fold") : "ln";
+        return `<span class="${cls}" data-ln="${i}">${i + 1}</span>`;
+      }).join("");
+      body.innerHTML = lines.map((line, i) => {
+        let hidden = false;
+        for (const open in folds) {
+          const o = Number(open), c = folds[o];
+          if (state[o] && i > o && i < c) { hidden = true; break; }
+          if (state[o] && i === c) { hidden = true; break; }
+        }
+        const cls = "json-line" + (hidden ? " hidden-fold" : "");
+        let html = highlightJsonLine(line);
+        if (state[i] && folds[i] != null) {
+          html += ' <span class="fold-summary">⋯ ' + (folds[i] - i - 1) + ' 行</span>';
+        }
+        return `<span class="${cls}" data-ln="${i}">${html || "&nbsp;"}</span>`;
+      }).join("\n");
+    }
+    paint();
+    gutter.addEventListener("click", (e) => {
+      const t = e.target.closest(".ln");
+      if (!t) return;
+      const i = Number(t.dataset.ln);
+      if (folds[i] == null) return;
+      state[i] = !state[i];
+      paint();
+    });
+  }
+
+  const sampleJson = JSON.stringify({
+    args: {
+      loanNo: "LN20260501000000001",
+      operator: "harper",
+      context: {
+        traceId: "trace-9f8e2c",
+        clientIp: "10.20.31.5",
+        tags: ["audit", "manual"]
+      }
+    }
+  }, null, 2);
+
+  const sampleResp = JSON.stringify({
+    loanNo: "LN20260501000000001",
+    status: "ACTIVE",
+    amount: 1500000,
+    repayPlans: [
+      { periodNo: 1, principal: 250000, dueDate: "2026-06-01" },
+      { periodNo: 2, principal: 250000, dueDate: "2026-07-01" },
+      { periodNo: 3, principal: 250000, dueDate: "2026-08-01" }
+    ],
+    extra: null,
+    settled: false
+  }, null, 2);
+
+  document.querySelectorAll("[data-json-viewer]").forEach(el => {
+    const initial = el.dataset.editable ? sampleJson : sampleResp;
+    renderJsonViewer(el, initial);
+  });
+</script>
+</body>
+</html>

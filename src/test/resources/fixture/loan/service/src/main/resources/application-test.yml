@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: loan-service
+
+loan:
+  query:
+    facade: com.company.loan.facade.LoanQueryFacade
+    unique-id: xml-test
+    serialize: hessian2

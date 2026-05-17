@@ -1,0 +1,60 @@
+server:
+  listen: "0.0.0.0:8080"
+  dataDir: "/data/sofa-facade-doc"
+
+auth:
+  adminTokens:
+    - "change-me-admin-token"
+
+teams:
+  loan-team:
+    displayName: "贷款团队"
+    tokens:
+      - "change-me-loan-team-token"
+
+git:
+  sshKeyPath: "/run/secrets/git_deploy_key"
+  # tokenEnv: "SOFA_DOC_GIT_TOKEN"
+
+projects:
+  loan:
+    team: "loan-team"
+    displayName: "贷款服务"
+    repo: "git@git.company.com:team/loan.git"
+    baselineBranch: "develop"
+    tokens:
+      - "change-me-project-token"
+
+    branchDefaults:
+      directUrl: "bolt://10.10.1.23:12200"
+      uniqueId: ""
+      version: ""
+      targetAppName: ""
+      springProfiles:
+        - "test"
+
+    branches:
+      include:
+        - "develop"
+        - "test"
+        - "feature/*"
+      exclude:
+        - "feature/wip-*"
+      maxMatched: 20
+
+    sourceRoots:
+      - "facade/src/main/java"
+      - "service/src/main/java"
+    resourceRoots:
+      - "service/src/main/resources"
+    facadePackages:
+      - "com.company.loan.facade"
+
+    branchOverrides:
+      "feature/*":
+        directUrl: "bolt://10.10.1.25:12200"
+        targetAppName: "loan-test"
+      test:
+        directUrl: "bolt://10.10.1.24:12200"
+        springProfiles:
+          - "test"

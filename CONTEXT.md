@@ -1,0 +1,42 @@
+# Context
+
+## Domain Terms
+
+- **Team**: owns one or more projects. A team token may manage only projects assigned to that team.
+- **Project**: a configured Git repository plus branch, source root, facade package, and runtime call settings.
+- **Project Ownership**: the `projects.<projectId>.team` assignment that connects a project to a team.
+- **Project Access**: the request-time rule that checks token scope before project existence, so unauthorized tokens cannot discover whether another project exists.
+- **Project Configuration**: the editable project slice of the YAML configuration, including branch rules, source/resource roots, facade packages, tokens, and runtime settings.
+- **Project Configuration Validation**: the field-level check that reports invalid or locked project configuration before saving the YAML-backed configuration.
+- **Project Configuration Workbench**: the browser workspace for editing visible project and branch settings through scoped forms instead of raw YAML or raw JSON.
+- **Project Catalog**: the read-side workflow that lists projects and branches visible to a token, including Git branch resolution and fallback to configured branch includes.
+- **Configuration Authorization**: the rules that decide which token may see or change which project configuration.
+- **Scan Planning**: the branch scan state machine that decides whether a commit can reuse the latest snapshot, should skip because no interface-related file changed, should skip because the structure hash is unchanged, or should create a new snapshot.
+- **Source Root Resolution**: the scanner pre-step that turns project/branch source root configuration into Java and resource root paths, or discovers conventional `src/main/java` and `src/main/resources` roots when configuration is omitted.
+- **Java Source Indexing**: the scanner rule that parses Java source roots into a typed source index of classes, interfaces, enums, fields, methods, inheritance, imports, diagnostics, and annotation publish records.
+- **Java Annotation Reading**: the shared scanner rule for finding simple or fully-qualified Java annotations and reading named or single-member annotation values.
+- **Java Comment Reading**: the shared scanner rule for extracting class, method, field, enum, parameter, return, and deprecation text from Javadoc or source comments.
+- **Payload Field Rules**: the scanner rules that decide payload field inclusion, JSON field names, required status, and validation constraint text from source comments and Java annotations.
+- **SOFA Annotation Publish Parsing**: the scanner rule that turns `@SofaService` on classes or bean methods into publish records.
+- **SOFA XML Publish Parsing**: the scanner rule that reads `sofa:service` XML records, resolves `application*.properties/yml` placeholders for selected Spring profiles, and emits publish records with source location.
+- **Facade Payload Tree Building**: the scanner rule that expands method parameters and returns into recursive JSON field trees, examples, generic substitutions, inherited fields/methods, truncation, source-missing notes, and stable method ids.
+- **Facade Document Assembly**: the scanner rule that combines publish records, facade candidates, source metadata, diagnostics, and payload trees into a branch document.
+- **Document Structure Hashing**: the snapshot rule that hashes the stable interface document shape while ignoring commit and generation time.
+- **Invocation Payload Conversion**: the runtime rule that converts request JSON into SofaRPC generic arguments for DTOs, enums, collections, maps, dates, and numeric scalar types.
+- **Invocation Validation**: the runtime rule that checks request JSON shape before calling SofaRPC, blocking type/enum errors while warning on missing required or unknown fields.
+- **Generic Response Normalization**: the runtime rule that converts SofaRPC generic responses into JSON-friendly maps, arrays, dates, and `_type` markers.
+- **SofaRPC Generic Transport**: the runtime rule that owns TCP probe and `bolt + hessian2` generic invocation.
+- **Store Database**: the SQLite connection and schema module shared by persistence stores.
+- **Snapshot Store**: the persistence module for interface document snapshots and snapshot retention.
+- **Search Index Store**: the persistence module for FTS indexing and search hits.
+- **Scan Report Store**: the persistence module for branch scan report history.
+- **Saved Case Store**: the persistence module for project-scoped invocation examples.
+- **Document Query**: the read-side workflow that resolves snapshots, facade methods, Markdown, diffs, and runtime call preparation for a project branch.
+- **Scan Presentation**: the read-side rule that decides how scan results and scan reports expose failure details to admin, team, and project tokens.
+- **Case Library**: the project-scoped collection of saved invocation examples for facade methods. Route identity controls project, branch, service, method, and case id when saving or updating cases.
+- **Team-Managed Project**: a project created or maintained through a team token. It must remain owned by that team, and team edits are limited to non-permission project settings unless explicitly expanded.
+- **Project Creation Grant**: a team token may create a project owned by its team and set `repo` and `tokens` during creation. After creation, `team`, `repo`, and `tokens` are locked for team-token updates.
+- **Project Deletion Policy**: project deletion is not part of the first configuration authorization module. Admin and team tokens may add or update allowed project configuration, but there is no project delete operation.
+- **Admin Token**: token that may see and change all project configuration and the raw YAML configuration.
+- **Team Token**: token that may see and change only project configuration owned by its team.
+- **Project Token**: token that may access one project workspace but may not edit project configuration.

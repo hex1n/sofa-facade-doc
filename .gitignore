@@ -1,0 +1,15 @@
+.DS_Store
+.claude/settings.local.json
+
+# Runtime data
+/data/
+
+# Local config and secrets
+/config.local.yml
+/.env
+
+# Build output
+/bin/
+/dist/
+/tmp/
+/target/

@@ -1,0 +1,8 @@
+.DS_Store
+.env
+.git
+.gitignore
+config.local.yml
+data/
+target/
+tmp/

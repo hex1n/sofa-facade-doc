@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SOFABoot Facade 文档平台</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div id="login" class="login">
+  <div class="login-panel">
+    <div class="login-mark">S</div>
+    <h1>SOFABoot Facade 文档平台</h1>
+    <p>输入 admin token 或 project token 后继续。</p>
+    <input id="tokenInput" type="password" placeholder="Authorization Bearer token">
+    <button id="tokenSave" class="primary">进入</button>
+  </div>
+</div>
+<main id="app" class="app hidden">
+  <aside id="sidebarPanel" class="panel sidebar">
+    <button id="sidebarToggle" class="sidebar-toggle" type="button" aria-label="收起左侧导航" title="收起左侧导航">‹</button>
+    <div class="brand">
+      <div class="brand-mark">S</div>
+      <div>
+        <span>SOFABoot Facade</span>
+        <small>接口文档 · 测试调用</small>
+      </div>
+    </div>
+    <button id="configBtn" class="platform-entry">项目与分支配置</button>
+    <section class="nav-section">
+      <div class="section-title">
+        <h2>项目</h2>
+      </div>
+      <select id="projectSelect"></select>
+    </section>
+    <section class="nav-section">
+      <div class="section-title">
+        <h2>分支</h2>
+      </div>
+      <select id="branchSelect"></select>
+      <label class="diff-base-row">
+        <span>对比基线</span>
+        <select id="baseBranchSelect"></select>
+      </label>
+      <div class="scan-actions">
+        <button id="scanBtn" class="wide">刷新当前分支</button>
+        <button id="scanAllBtn" class="wide secondary">刷新全部分支</button>
+      </div>
+      <div id="scanSummary" class="scan-summary hidden"></div>
+      <div id="scanReports" class="scan-reports hidden"></div>
+    </section>
+    <section class="nav-section service-section">
+      <div class="service-tools">
+        <div class="search-wrap">
+          <input id="search" class="search" placeholder="搜索服务 / 方法 / 字段 / 注释">
+          <span>↵</span>
+        </div>
+        <div class="change-filter-label">接口筛选</div>
+        <div id="changeFilter" class="change-filter" aria-label="按接口差异内容筛选">
+          <button type="button" data-change-filter="all" class="active">全部</button>
+          <button type="button" data-change-filter="changed">只看差异</button>
+          <button type="button" data-change-filter="added">含新增</button>
+          <button type="button" data-change-filter="modified">含内容修改</button>
+          <button type="button" data-change-filter="removed">含删除</button>
+        </div>
+      </div>
+      <div class="section-title">
+        <h2>服务</h2>
+        <span id="serviceCount">0</span>
+      </div>
+      <div id="serviceList" class="service-list"></div>
+    </section>
+  </aside>
+  <section class="panel content">
+    <div class="content-scroll">
+      <div class="sticky-head">
+        <header class="toolbar">
+          <div>
+            <div id="methodBreadcrumb" class="breadcrumb">项目 / 分支 / 服务 / 方法</div>
+            <div id="methodTitle" class="method-title">请选择接口方法</div>
+            <div id="methodMeta" class="meta"></div>
+          </div>
+          <div class="toolbar-actions">
+            <button id="copyMd">复制 Markdown</button>
+            <button id="downloadMd">下载 Markdown</button>
+            <button id="copyLink">复制链接</button>
+          </div>
+        </header>
+        <nav class="tabs">
+          <button data-tab="doc" class="active">文档</button>
+          <button data-tab="tree">字段树</button>
+          <button data-tab="json">JSON 示例</button>
+          <button data-tab="diff">Diff</button>
+        </nav>
+      </div>
+      <article id="docPane" class="pane markdown">
+        <div class="empty-state">
+          <div class="empty-title">选择左侧方法后查看接口文档</div>
+          <div class="empty-copy">文档、字段树、JSON 示例和 Diff 会在这里联动展示。</div>
+        </div>
+      </article>
+      <article id="treePane" class="pane hidden"><div id="fieldTree"></div></article>
+      <article id="jsonPane" class="pane hidden"><div id="jsonExample" class="json-viewer"><div class="json-gutter"></div><div class="json-body"></div></div></article>
+      <article id="diffPane" class="pane hidden"><div id="diffList" class="diff-list"></div></article>
+    </div>
+  </section>
+  <aside id="invokePanel" class="panel invoke">
+    <button id="invokeToggle" class="invoke-toggle" type="button" aria-label="收起 RPC 调用区" title="收起 RPC 调用区">›</button>
+    <div class="invoke-scroll">
+      <div class="invoke-head">
+        <div>
+          <h2>RPC 调用</h2>
+          <small>bolt + hessian2 · 仅测试环境</small>
+        </div>
+        <span>测试环境</span>
+      </div>
+      <div id="targetBox" class="target">目标：-</div>
+      <div>
+        <label>发布记录</label>
+        <select id="publishSelect"></select>
+      </div>
+      <div>
+        <button id="probeBtn" class="wide">连通性检查</button>
+        <div id="probeResult" class="meta"></div>
+      </div>
+      <div>
+        <label>请求 JSON</label>
+        <div id="argsEditorWrap" class="code-input">
+          <div class="code-gutter"></div>
+          <div class="code-stack">
+            <pre class="code-highlight"></pre>
+            <textarea id="argsEditor" class="code-textarea" spellcheck="false"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="invoke-actions">
+        <button id="invokeBtn" class="primary">调用</button>
+        <button id="saveCaseBtn">保存用例</button>
+        <button id="updateCaseBtn">更新用例</button>
+      </div>
+      <div>
+        <label>响应</label>
+        <pre id="responseBox" class="response"></pre>
+      </div>
+      <h3>共享用例</h3>
+      <div id="caseList" class="case-list"></div>
+    </div>
+  </aside>
+</main>
+<div id="configModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="configTitle">
+  <div id="configBackdrop" class="modal-backdrop"></div>
+  <section class="modal-panel config-panel">
+    <header class="modal-head">
+      <div>
+        <h2 id="configTitle">项目与分支配置</h2>
+        <p id="configPath">仅展示当前 token 可管理的项目</p>
+      </div>
+      <button id="configClose" class="icon-btn" aria-label="关闭">×</button>
+    </header>
+    <div class="config-workbench">
+      <aside class="config-list">
+        <div class="config-list-head">
+          <strong>项目</strong>
+          <button id="configAddProject" type="button">新增</button>
+        </div>
+        <div id="configProjectList"></div>
+      </aside>
+      <section class="config-form">
+        <div class="config-grid">
+          <label>项目 ID<input id="cfgId"></label>
+          <label>团队<select id="cfgTeam"></select></label>
+          <label>名称<input id="cfgDisplayName"></label>
+          <label>基线分支<input id="cfgBaselineBranch" placeholder="main"></label>
+          <label class="span-2">Git 仓库<input id="cfgRepo"></label>
+          <label class="span-2">项目 Token<input id="cfgTokens" placeholder="多个用逗号分隔"></label>
+          <label>分支 Include<input id="cfgBranchesInclude" placeholder="main, feature/*"></label>
+          <label>分支 Exclude<input id="cfgBranchesExclude" placeholder="feature/wip-*"></label>
+          <label>最大匹配数<input id="cfgBranchesMax" type="number" min="1"></label>
+          <label>测试 directUrl<input id="cfgDirectUrl" placeholder="bolt://127.0.0.1:12200"></label>
+          <label>uniqueId<input id="cfgUniqueId"></label>
+          <label>version<input id="cfgVersion"></label>
+          <label>targetAppName<input id="cfgTargetAppName"></label>
+          <label>Spring Profiles<input id="cfgSpringProfiles" placeholder="test"></label>
+          <label class="span-2">源码根目录<input id="cfgSourceRoots" placeholder="facade/src/main/java, service/src/main/java"></label>
+          <label class="span-2">资源根目录<input id="cfgResourceRoots" placeholder="service/src/main/resources"></label>
+          <label class="span-2">Facade 包名前缀<input id="cfgFacadePackages" placeholder="com.company.loan.facade"></label>
+          <label class="span-2">分支覆盖 JSON<textarea id="cfgBranchOverrides" spellcheck="false" placeholder='{"feature/*":{"directUrl":"bolt://127.0.0.1:12201"}}'></textarea></label>
+        </div>
+      </section>
+    </div>
+    <textarea id="configEditor" class="config-editor hidden" spellcheck="false"></textarea>
+    <div class="modal-actions">
+      <div id="configResult" class="modal-result"></div>
+      <button id="configReload" class="secondary">重新读取</button>
+      <button id="configSave" class="primary">保存项目配置</button>
+    </div>
+  </section>
+</div>
+<script src="/config-workbench.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>

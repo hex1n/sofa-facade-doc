@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:sofa="http://sofastack.io/schema/sofaboot">
+    <sofa:service ref="loanQueryFacadeImpl" interface="${loan.query.facade}" unique-id="${loan.query.unique-id}">
+        <sofa:global-attrs timeout="${loan.query.timeout:3000}" serialize-type="${loan.query.serialize}"/>
+        <sofa:binding.bolt/>
+    </sofa:service>
+</beans>
